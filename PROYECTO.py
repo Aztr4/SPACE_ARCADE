@@ -18,23 +18,10 @@ pygame.init()
 pygame.mixer.init()
 pantalla= pygame.display.set_mode((ANCHO,ALTO))
 pygame.display.set_caption("Space Arcade")
+icono=pygame.image.load("Sprites_secundarios/P_prueba.png")
+icono.set_colorkey(BLANCO)
+pygame.display.set_icon(icono)
 reloj = pygame.time.Clock()
-
-def dibujar_texto(superficie, texto, dimensiones,x, y):
-    fuente = pygame.font.SysFont("Broadway", dimensiones)
-    superficie_txt= fuente.render(texto, False, BLANCO)
-    txt_rect= superficie_txt.get_rect()
-    txt_rect.midtop = (x,y)
-    superficie.blit (superficie_txt, txt_rect)
-
-def barra_vida(superficie_bar,x,y, porcentaje):
-    LARGO_bar= 100
-    ALTO_bar = 10
-    calculo_barra= (porcentaje/100)* LARGO_bar
-    borde = pygame.Rect(x,y, LARGO_bar, ALTO_bar)
-    calculo_barra= pygame.Rect(x,y, calculo_barra, ALTO_bar)
-    pygame.draw.rect(superficie_bar, ROJO, calculo_barra)
-    pygame.draw.rect(superficie_bar, BLANCO, borde, 2)
 
 class Jugador(pygame.sprite.Sprite):
     def __init__(self):
@@ -51,14 +38,14 @@ class Jugador(pygame.sprite.Sprite):
     def update(self):
         self.vel_x = 0
         self.vel_y = 0
-        keystate = pygame.key.get_pressed()
-        if keystate[pygame.K_LEFT]:
+        tecla = pygame.key.get_pressed()
+        if tecla[pygame.K_LEFT]:
             self.vel_x = -5
-        if keystate[pygame.K_RIGHT]:
+        if tecla[pygame.K_RIGHT]:
             self.vel_x = 5
-        if keystate[pygame.K_UP]:
+        if tecla[pygame.K_UP]:
             self.vel_y = -5
-        if keystate[pygame.K_DOWN]:
+        if tecla[pygame.K_DOWN]:
             self.vel_y = 5
         
         self.rect.x += self.vel_x
@@ -107,9 +94,16 @@ class Estrellas(pygame.sprite.Sprite):
         self.rect = self.image.get_rect()
         self.rect.x= random.randrange(ANCHO - self.rect.width)
         self.rect.y= random.randrange(ALTO - self.rect.height)
+        self.vel_y = random.randrange (1,10)
+        self.vel_x = random.randrange (-5,5)
         
     def update(self):
-        pass
+        self.rect.x += self.vel_x
+        self.rect.y += self.vel_y
+        if self.rect.top > ALTO +10 or self.rect.left < -25 or self.rect.right > ANCHO +22:
+            self.rect.x = random.randrange(ANCHO -  self.rect.width)
+            self.rect.y = random.randrange (-150,-100)
+            self.vel_y = random.randrange (1,8)
 
 
 
@@ -151,6 +145,22 @@ class Explosion(pygame.sprite.Sprite):
                 self.rect = self.image.get_rect()
                 self.rect.center = center
 
+def dibujar_texto(superficie, texto, dimensiones,x, y):
+    fuente = pygame.font.SysFont("Broadway", dimensiones)
+    superficie_txt= fuente.render(texto, False, BLANCO)
+    txt_rect= superficie_txt.get_rect()
+    txt_rect.midtop = (x,y)
+    superficie.blit (superficie_txt, txt_rect)
+
+def barra_vida(superficie_bar,x,y, porcentaje):
+    LARGO_bar= 100
+    ALTO_bar = 10
+    calculo_barra= (porcentaje/100)* LARGO_bar
+    borde = pygame.Rect(x,y, LARGO_bar, ALTO_bar)
+    calculo_barra= pygame.Rect(x,y, calculo_barra, ALTO_bar)
+    pygame.draw.rect(superficie_bar, ROJO, calculo_barra)
+    pygame.draw.rect(superficie_bar, BLANCO, borde, 2)
+
 Inicio= pygame.image.load ("Sprites/inicio.png").convert()
 
 def pantalla_game_over():
@@ -168,6 +178,8 @@ def pantalla_game_over():
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_SPACE:
                     wait= False
+
+
          
 
 
@@ -194,9 +206,29 @@ fondo = pygame.image.load ("Sprites/fondo.png").convert()
 #Musica
 sonido_laser= pygame.mixer.Sound("sonidos/laser5.ogg")
 explosion_sound= pygame.mixer.Sound("sonidos/explosion.wav")
+sonido_estrella= pygame.mixer.Sound("sonidos/sonido_plus.ogg")
 pygame.mixer.music.load("sonidos/intergalactic_odyssey.ogg")
-pygame.mixer.music.set_volume(0.1)
+#pygame.mixer.music.set_volume(0.1)
 pygame.mixer.music.play(loops=-1)
+
+#Sprites-Sistema de Sonido
+
+subir_sonido = pygame.image.load('sonidos/mas_volumen.png').convert()
+subir_sonido.set_colorkey(NEGRO)
+pygame.transform.scale(subir_sonido, (20,20))
+
+bajar_sonido = pygame.image.load('sonidos/menos_volumen.png').convert()
+bajar_sonido.set_colorkey(NEGRO)
+pygame.transform.scale(bajar_sonido, (20,20))
+
+sonido_mute = pygame.image.load('sonidos/mute_volumen.png').convert()
+sonido_mute.set_colorkey(NEGRO)
+pygame.transform.scale(sonido_mute, (20,20))
+
+sonido_max = pygame.image.load('sonidos/max_volumen.png').convert()
+sonido_max.set_colorkey(NEGRO)
+pygame.transform.scale(sonido_max, (20,20))
+
 
 #-----BUCLE-------------
 game_over = True
@@ -206,13 +238,15 @@ while ejecutar:
     if game_over:
         
         pantalla_game_over()
-        
         game_over = False
+        
+        #Grupos
         sprites = pygame.sprite.Group()
         meteor_list = pygame.sprite.Group()
         bullets = pygame.sprite.Group()
         estrella = pygame.sprite.Group()
 
+    #instanciación
         jugador = Jugador()
         sprites.add(jugador)
 
@@ -221,7 +255,7 @@ while ejecutar:
             sprites.add(meteor)
             meteor_list.add(meteor)
         
-        for i in range(3):
+        for i in range(1):
             stars = Estrellas()
             sprites.add(stars)
             estrella.add(stars)
@@ -253,7 +287,7 @@ while ejecutar:
     #Colisiones meteoro-jugador
     colision = pygame.sprite.spritecollide(jugador, meteor_list, True)
     for n in colision:
-        jugador.barra -=25
+        jugador.barra -=20
         meteor= Meteoros()
         sprites.add(meteor)
         meteor_list.add(meteor)
@@ -261,14 +295,60 @@ while ejecutar:
             game_over = True
     
     
+    #Colisiones estrella-jugador
+    colision = pygame.sprite.spritecollide(jugador, estrella, True)
+    for n in colision:
+        score += 5
+        if jugador.barra >=100:
+            jugador.barra +=0
+        else:
+            jugador.barra +=15
+        sonido_estrella.play()
+        stars= Estrellas()
+        sprites.add(stars)
+        estrella.add(stars)
+        
+        
+    pantalla.blit(fondo, (0,0))
+    
+    #CONTROL DE AUDIO
+    
+    tecla_s = pygame.key.get_pressed()
+    #Baja volumen
+    if tecla_s[pygame.K_KP_MINUS] and pygame.mixer.music.get_volume() > 0.0:
+        pygame.mixer.music.set_volume(pygame.mixer.music.get_volume() - 0.01)
+        pantalla.blit(bajar_sonido, (650, 20))
+    elif tecla_s[pygame.K_KP_MINUS] and pygame.mixer.music.get_volume() == 0.0:
+        pantalla.blit(sonido_mute, (650, 20))
+
+    #Sube volumen
+    if tecla_s[pygame.K_KP_PLUS] and pygame.mixer.music.get_volume() < 1.0:
+        pygame.mixer.music.set_volume(pygame.mixer.music.get_volume() + 0.01)
+        pantalla.blit(subir_sonido, (650, 20))
+    elif tecla_s [pygame.K_KP_PLUS] and pygame.mixer.music.get_volume() == 1.0:
+            pantalla.blit(sonido_max, (650, 20))
+
+    #Desactivar sonido
+    elif tecla_s[pygame.K_KP0]:
+        pygame.mixer.music.set_volume(0.0)
+        pantalla.blit(sonido_mute, (650, 20))
+
+    #Reactivar sonido
+    elif tecla_s[pygame.K_KP9]:
+        pygame.mixer.music.set_volume(1.0)
+        pantalla.blit(sonido_max, (650, 20))
+    
+    
+    
     ###############################IMPRIMIR
     
-    pantalla.blit(fondo, (0,0))
+    
     sprites.draw(pantalla)
     dibujar_texto(pantalla, str(score), 25, ANCHO//2, 10)
     barra_vida(pantalla, 5, 5, jugador.barra)  
     
-    
+    pygame.display.update()
+
     
     pygame.display.flip()
     
